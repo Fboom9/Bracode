@@ -35,7 +35,7 @@
 <div id="chat">
   <h2>🌀 AI Clerk + PS Scanner</h2>
   <div id="log">
-    <div class="bot msg">Ready. Say: "add sale [item] [price]", "get last", or "search [game] in [us/ae]"</div>
+    <div class="bot msg">Ready. Say: "add sale [item] [price]", "get last", or "search [game]"</div>
   </div>
   <div id="input-area">
     <input id="input" placeholder="Type command...">
@@ -47,7 +47,7 @@
 
 <script>
 // --- CONFIG ---
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzv_Qo6Z4rInIVkGj3RKvf6dB0o8mgC0OlvXVj7a4jHXA4RDW0oDYlzpMKL9zSRTJ0b/exec";
+const SCRIPT_URL = "YOUR_APPS_SCRIPT_URL_HERE";
 
 // --- DOM ---
 const video = document.getElementById('video');
@@ -90,11 +90,11 @@ function addLog(text, cls = 'bot') {
 }
 
 // --- BACKEND CALL ---
-async function callSheet(action, item = '', value = '', region = 'us') {
+async function callSheet(action, item = '', value = '') {
   try {
     const body = { action };
     if (action === 'add') { body.item = item; body.value = value; }
-    if (action === 'search_ps') { body.query = item; body.region = region; }
+    if (action === 'search_ps') { body.query = item; }
     const res = await fetch(SCRIPT_URL, {
       method: 'POST',
       body: JSON.stringify(body),
@@ -129,7 +129,7 @@ async function handleCommand(raw) {
   // --- GET LAST ---
   if (txt === 'get last') {
     const res = await callSheet('get');
-    if (res.status === 'ok' && res.data[1]) {
+    if (res.status === 'ok' && res.data && res.data[1]) {
       const reply = `Last entry: ${res.data[1]} at ${res.data[2] || 'N/A'}`;
       addLog(reply); speak(reply);
     } else {
@@ -141,52 +141,43 @@ async function handleCommand(raw) {
 
   // --- SEARCH PS STORE ---
   if (txt.startsWith('search') || txt.startsWith('find')) {
-    // parse: "search god of war in us" or "search god of war" (default us)
     let query = raw.slice(txt.startsWith('search') ? 6 : 4).trim();
-    let region = 'us';
-    const inIndex = query.toLowerCase().lastIndexOf(' in ');
-    if (inIndex !== -1) {
-      const regionPart = query.slice(inIndex + 4).trim();
-      if (regionPart === 'ae' || regionPart === 'uae' || regionPart === 'us') {
-        region = regionPart === 'uae' ? 'ae' : regionPart;
-        query = query.slice(0, inIndex).trim();
-      }
-    }
     if (!query) {
       const reply = "What game are you looking for?";
       addLog(reply); speak(reply); return;
     }
 
-    addLog(`Searching PS Store (${region}) for "${query}"...`);
-    const res = await callSheet('search_ps', query, '', region);
+    addLog(`Searching PS Store for "${query}"...`);
+    const res = await callSheet('search_ps', query);
+
     if (res.status === 'error') {
       const reply = `Search error: ${res.msg}`;
       addLog(reply); speak(reply); return;
     }
 
     if (!res.results || res.results.length === 0) {
-      const reply = `No results found for "${query}" in ${region} store.`;
+      const reply = `No results found for "${query}".`;
       addLog(reply); speak(reply);
       return;
     }
 
-    // Show first 3 results
     const top = res.results.slice(0, 3);
     let reply = `Found ${res.results.length} result(s). `;
-    reply += top.map((r, i) => `${i+1}. ${r.name} - ${r.price}`).join(' ');
+    reply += top.map((r, i) => `${i+1}. ${r.name} - ${r.discountPrice || r.price || 'N/A'}`).join(' ');
     if (res.results.length > 3) reply += ' ...and more.';
     addLog(reply);
     speak(reply);
 
-    // Show on camera overlay
-    floatPrice.innerText = `🎮 ${top[0].name} → ${top[0].price}`;
-    floatPrice.style.display = 'block';
-    setTimeout(() => { floatPrice.style.display = 'none'; }, 8000);
+    if (top[0]) {
+      floatPrice.innerText = `🎮 ${top[0].name} → ${top[0].discountPrice || top[0].price || 'N/A'}`;
+      floatPrice.style.display = 'block';
+      setTimeout(() => { floatPrice.style.display = 'none'; }, 8000);
+    }
     return;
   }
 
   // --- UNKNOWN ---
-  const reply = "Commands: 'add sale [item] [price]', 'get last', or 'search [game] in [us/ae]'.";
+  const reply = "Commands: 'add sale [item] [price]', 'get last', or 'search [game]'.";
   addLog(reply);
   speak(reply);
 }
@@ -220,7 +211,6 @@ function initFace() {
         ctx.shadowBlur = 10;
         ctx.strokeRect(x, y, w, h);
 
-        // Fun neon glasses
         const cx = x + w/2;
         const cy = y + h/3;
         const eyeR = w * 0.15;
