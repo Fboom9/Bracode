@@ -1,13 +1,14 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Face CRM</title>
+  <title>Face CRM + PS Store</title>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/face_detection.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
   <style>
-    body { margin:0; background:#0a0a0a; color:#0f0; font-family:monospace; display:flex; height:100vh; overflow:hidden; }
-    #cam { position:relative; width:60%; height:100%; }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { background:#0a0a0a; color:#0f0; font-family:monospace; display:flex; height:100vh; overflow:hidden; }
+    #cam { position:relative; width:60%; height:100%; background:#000; }
     #video { width:100%; height:100%; object-fit:cover; }
     #canvas { position:absolute; top:0; left:0; width:100%; height:100%; }
     #chat { width:40%; padding:20px; display:flex; flex-direction:column; background:#111; border-left:2px solid #0f0; }
@@ -15,11 +16,12 @@
     .msg { padding:8px; margin:4px 0; border-bottom:1px solid #222; }
     .user { color:#0ff; }
     .bot { color:#0f0; }
-    #input-area { display:flex; gap:10px; }
-    #input { flex:1; background:#222; border:1px solid #0f0; color:#fff; padding:10px; }
-    #mic { background:#0f0; color:#000; border:none; padding:10px; cursor:pointer; border-radius:4px; }
-    #speak-btn { background:#00f; color:#fff; border:none; padding:10px; cursor:pointer; border-radius:4px; }
-    .status { font-size:12px; color:#555; }
+    #input-area { display:flex; gap:10px; flex-wrap:wrap; }
+    #input { flex:1; background:#222; border:1px solid #0f0; color:#fff; padding:10px; min-width:120px; }
+    #mic, #speak-btn { background:#0f0; color:#000; border:none; padding:10px 15px; cursor:pointer; border-radius:4px; font-weight:bold; }
+    #speak-btn { background:#00f; color:#fff; }
+    .status { font-size:12px; color:#555; margin-top:8px; }
+    #float-price { position:absolute; bottom:20px; left:20px; background:rgba(0,0,0,0.8); color:#0f0; padding:12px 20px; border:1px solid #0f0; border-radius:8px; font-size:18px; display:none; }
   </style>
 </head>
 <body>
@@ -27,22 +29,25 @@
 <div id="cam">
   <video id="video" playsinline></video>
   <canvas id="canvas"></canvas>
+  <div id="float-price">🎮 Game found</div>
 </div>
 
 <div id="chat">
-  <h2>🌀 AI Clerk</h2>
-  <div id="log"><div class="bot msg">Ready. Say "add sale" or "get last".</div></div>
+  <h2>🌀 AI Clerk + PS Scanner</h2>
+  <div id="log">
+    <div class="bot msg">Ready. Say: "add sale [item] [price]", "get last", or "search [game] in [us/ae]"</div>
+  </div>
   <div id="input-area">
     <input id="input" placeholder="Type command...">
     <button id="mic">🎤 Speak</button>
-    <button id="speak-btn">🔊 Echo</button>
+    <button id="speak-btn">🔊 Test Voice</button>
   </div>
   <div class="status" id="status">Face detection: loading...</div>
 </div>
 
 <script>
 // --- CONFIG ---
-const SCRIPT_URL = "YOUR_APPS_SCRIPT_URL_HERE"; // PASTE YOUR DEPLOYED URL
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzv_Qo6Z4rInIVkGj3RKvf6dB0o8mgC0OlvXVj7a4jHXA4RDW0oDYlzpMKL9zSRTJ0b/exec";
 
 // --- DOM ---
 const video = document.getElementById('video');
@@ -53,6 +58,7 @@ const input = document.getElementById('input');
 const micBtn = document.getElementById('mic');
 const speakBtn = document.getElementById('speak-btn');
 const statusDiv = document.getElementById('status');
+const floatPrice = document.getElementById('float-price');
 
 // --- SPEECH ---
 function speak(text) {
@@ -84,11 +90,14 @@ function addLog(text, cls = 'bot') {
 }
 
 // --- BACKEND CALL ---
-async function callSheet(action, item = '', value = '') {
+async function callSheet(action, item = '', value = '', region = 'us') {
   try {
+    const body = { action };
+    if (action === 'add') { body.item = item; body.value = value; }
+    if (action === 'search_ps') { body.query = item; body.region = region; }
     const res = await fetch(SCRIPT_URL, {
       method: 'POST',
-      body: JSON.stringify({ action, item, value }),
+      body: JSON.stringify(body),
       headers: { 'Content-Type': 'application/json' }
     });
     return await res.json();
@@ -102,36 +111,82 @@ async function handleCommand(raw) {
   const txt = raw.toLowerCase().trim();
   addLog(`You: ${raw}`, 'user');
 
+  // --- ADD SALE ---
   if (txt.startsWith('add sale')) {
-    const parts = raw.split(' ').slice(2); // assumes "add sale item value"
+    const parts = raw.split(' ').slice(2);
     if (parts.length < 2) {
-      const reply = "Need item name and value.";
-      addLog(reply);
-      speak(reply);
-      return;
+      const reply = "Need item name and value. Example: add sale headset 50";
+      addLog(reply); speak(reply); return;
     }
     const item = parts.slice(0, -1).join(' ');
     const value = parts[parts.length - 1];
     const res = await callSheet('add', item, value);
-    const reply = res.status === 'saved' ? `Saved ${item} for ${value}` : `Error: ${res.msg}`;
-    addLog(reply);
-    speak(reply);
+    const reply = res.status === 'saved' ? `Saved ${item} for $${value}` : `Error: ${res.msg}`;
+    addLog(reply); speak(reply);
     return;
   }
 
+  // --- GET LAST ---
   if (txt === 'get last') {
     const res = await callSheet('get');
-    if (res.status === 'ok') {
+    if (res.status === 'ok' && res.data[1]) {
       const reply = `Last entry: ${res.data[1]} at ${res.data[2] || 'N/A'}`;
-      addLog(reply);
-      speak(reply);
+      addLog(reply); speak(reply);
     } else {
-      addLog('No data or error.');
+      const reply = 'No sales yet.';
+      addLog(reply); speak(reply);
     }
     return;
   }
 
-  const reply = "Say 'add sale [item] [price]' or 'get last'.";
+  // --- SEARCH PS STORE ---
+  if (txt.startsWith('search') || txt.startsWith('find')) {
+    // parse: "search god of war in us" or "search god of war" (default us)
+    let query = raw.slice(txt.startsWith('search') ? 6 : 4).trim();
+    let region = 'us';
+    const inIndex = query.toLowerCase().lastIndexOf(' in ');
+    if (inIndex !== -1) {
+      const regionPart = query.slice(inIndex + 4).trim();
+      if (regionPart === 'ae' || regionPart === 'uae' || regionPart === 'us') {
+        region = regionPart === 'uae' ? 'ae' : regionPart;
+        query = query.slice(0, inIndex).trim();
+      }
+    }
+    if (!query) {
+      const reply = "What game are you looking for?";
+      addLog(reply); speak(reply); return;
+    }
+
+    addLog(`Searching PS Store (${region}) for "${query}"...`);
+    const res = await callSheet('search_ps', query, '', region);
+    if (res.status === 'error') {
+      const reply = `Search error: ${res.msg}`;
+      addLog(reply); speak(reply); return;
+    }
+
+    if (!res.results || res.results.length === 0) {
+      const reply = `No results found for "${query}" in ${region} store.`;
+      addLog(reply); speak(reply);
+      return;
+    }
+
+    // Show first 3 results
+    const top = res.results.slice(0, 3);
+    let reply = `Found ${res.results.length} result(s). `;
+    reply += top.map((r, i) => `${i+1}. ${r.name} - ${r.price}`).join(' ');
+    if (res.results.length > 3) reply += ' ...and more.';
+    addLog(reply);
+    speak(reply);
+
+    // Show on camera overlay
+    floatPrice.innerText = `🎮 ${top[0].name} → ${top[0].price}`;
+    floatPrice.style.display = 'block';
+    setTimeout(() => { floatPrice.style.display = 'none'; }, 8000);
+    return;
+  }
+
+  // --- UNKNOWN ---
+  const reply = "Commands: 'add sale [item] [price]', 'get last', or 'search [game] in [us/ae]'.";
   addLog(reply);
   speak(reply);
 }
@@ -142,10 +197,7 @@ function initFace() {
     locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/${file}`
   });
 
-  faceDetection.setOptions({
-    model: 'short',
-    minDetectionConfidence: 0.5
-  });
+  faceDetection.setOptions({ model: 'short', minDetectionConfidence: 0.5 });
 
   faceDetection.onResults((results) => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -162,14 +214,13 @@ function initFace() {
         const w = (bbox.xMax - bbox.xMin) * canvas.width;
         const h = (bbox.yMax - bbox.yMin) * canvas.height;
 
-        // Neon bounding box
         ctx.strokeStyle = '#0f0';
         ctx.lineWidth = 3;
         ctx.shadowColor = '#0f0';
         ctx.shadowBlur = 10;
         ctx.strokeRect(x, y, w, h);
 
-        // Fun "customer glasses" (two circles)
+        // Fun neon glasses
         const cx = x + w/2;
         const cy = y + h/3;
         const eyeR = w * 0.15;
@@ -183,7 +234,6 @@ function initFace() {
         ctx.beginPath();
         ctx.arc(cx + eyeR*1.8, cy, eyeR, 0, 2*Math.PI);
         ctx.stroke();
-        // bridge
         ctx.beginPath();
         ctx.moveTo(cx - eyeR*0.8, cy);
         ctx.lineTo(cx + eyeR*0.8, cy);
