@@ -46,10 +46,8 @@
 </div>
 
 <script>
-// --- CONFIG ---
-const SCRIPT_URL = "YOUR_APPS_SCRIPT_URL_HERE";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzv_Qo6Z4rInIVkGj3RKvf6dB0o8mgC0OlvXVj7a4jHXA4RDW0oDYlzpMKL9zSRTJ0b/exec";
 
-// --- DOM ---
 const video = document.getElementById('video');
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
@@ -60,7 +58,6 @@ const speakBtn = document.getElementById('speak-btn');
 const statusDiv = document.getElementById('status');
 const floatPrice = document.getElementById('float-price');
 
-// --- SPEECH ---
 function speak(text) {
   const u = new SpeechSynthesisUtterance(text);
   u.lang = 'en-US';
@@ -80,7 +77,6 @@ function listen() {
   r.start();
 }
 
-// --- UI LOG ---
 function addLog(text, cls = 'bot') {
   const d = document.createElement('div');
   d.className = `msg ${cls}`;
@@ -89,7 +85,6 @@ function addLog(text, cls = 'bot') {
   logDiv.scrollTop = logDiv.scrollHeight;
 }
 
-// --- BACKEND CALL ---
 async function callSheet(action, item = '', value = '') {
   try {
     const body = { action };
@@ -106,16 +101,14 @@ async function callSheet(action, item = '', value = '') {
   }
 }
 
-// --- COMMAND PARSER ---
 async function handleCommand(raw) {
   const txt = raw.toLowerCase().trim();
   addLog(`You: ${raw}`, 'user');
 
-  // --- ADD SALE ---
   if (txt.startsWith('add sale')) {
     const parts = raw.split(' ').slice(2);
     if (parts.length < 2) {
-      const reply = "Need item name and value. Example: add sale headset 50";
+      const reply = "Need item and price. Example: add sale headset 50";
       addLog(reply); speak(reply); return;
     }
     const item = parts.slice(0, -1).join(' ');
@@ -126,7 +119,6 @@ async function handleCommand(raw) {
     return;
   }
 
-  // --- GET LAST ---
   if (txt === 'get last') {
     const res = await callSheet('get');
     if (res.status === 'ok' && res.data && res.data[1]) {
@@ -139,7 +131,6 @@ async function handleCommand(raw) {
     return;
   }
 
-  // --- SEARCH PS STORE ---
   if (txt.startsWith('search') || txt.startsWith('find')) {
     let query = raw.slice(txt.startsWith('search') ? 6 : 4).trim();
     if (!query) {
@@ -147,24 +138,22 @@ async function handleCommand(raw) {
       addLog(reply); speak(reply); return;
     }
 
-    addLog(`Searching PS Store for "${query}"...`);
+    addLog(`Searching for "${query}"...`);
     const res = await callSheet('search_ps', query);
 
     if (res.status === 'error') {
-      const reply = `Search error: ${res.msg}`;
+      const reply = `Error: ${res.msg}`;
       addLog(reply); speak(reply); return;
     }
 
     if (!res.results || res.results.length === 0) {
-      const reply = `No results found for "${query}".`;
-      addLog(reply); speak(reply);
-      return;
+      const reply = `No results for "${query}".`;
+      addLog(reply); speak(reply); return;
     }
 
     const top = res.results.slice(0, 3);
-    let reply = `Found ${res.results.length} result(s). `;
+    let reply = `Found ${res.results.length}. `;
     reply += top.map((r, i) => `${i+1}. ${r.name} - ${r.discountPrice || r.price || 'N/A'}`).join(' ');
-    if (res.results.length > 3) reply += ' ...and more.';
     addLog(reply);
     speak(reply);
 
@@ -176,13 +165,11 @@ async function handleCommand(raw) {
     return;
   }
 
-  // --- UNKNOWN ---
   const reply = "Commands: 'add sale [item] [price]', 'get last', or 'search [game]'.";
   addLog(reply);
   speak(reply);
 }
 
-// --- FACE DETECTION (MediaPipe) ---
 function initFace() {
   const faceDetection = new FaceDetection({
     locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/${file}`
@@ -242,14 +229,12 @@ function initFace() {
   camera.start();
 }
 
-// --- EVENTS ---
 micBtn.onclick = listen;
 speakBtn.onclick = () => speak('System ready.');
 input.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') handleCommand(input.value);
 });
 
-// --- INIT ---
 initFace();
 </script>
 </body>
