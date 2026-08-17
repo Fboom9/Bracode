@@ -1,847 +1,216 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>PS Repair Shop</title>
-    <!-- Barcode Libraries -->
-    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #0a0e17;
-            color: #e0e0e0;
-            padding: 20px;
-            min-height: 100vh;
-        }
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            background: #141b2b;
-            border-radius: 20px;
-            padding: 25px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
-            border: 1px solid #2a3a5a;
-        }
-        h1 {
-            text-align: center;
-            font-size: 26px;
-            color: #00d4ff;
-            margin-bottom: 20px;
-            text-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
-            letter-spacing: 2px;
-        }
-        .status-badge {
-            text-align: center;
-            padding: 10px;
-            border-radius: 10px;
-            font-weight: bold;
-            font-size: 18px;
-            margin-bottom: 15px;
-            background: #1e2a3d;
-            border-left: 4px solid #00d4ff;
-        }
-        .scanner-box {
-            background: #0f1729;
-            border-radius: 12px;
-            padding: 10px;
-            margin-bottom: 15px;
-            border: 2px dashed #2a3a5a;
-            position: relative;
-        }
-        #reader {
-            width: 100%;
-            min-height: 250px;
-        }
-        #reader video {
-            border-radius: 10px;
-            width: 100% !important;
-            height: auto !important;
-        }
-        .camera-toggle {
-            display: flex;
-            gap: 10px;
-            margin: 10px 0;
-        }
-        .camera-toggle button {
-            flex: 1;
-            padding: 10px;
-            border: none;
-            border-radius: 8px;
-            font-weight: bold;
-            cursor: pointer;
-            background: #1e2a3d;
-            color: #a0b4d0;
-            transition: all 0.2s;
-        }
-        .camera-toggle button.active {
-            background: #00d4ff;
-            color: #0a0e17;
-            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
-        }
-        .barcode-display {
-            text-align: center;
-            padding: 15px;
-            background: #0f1729;
-            border-radius: 10px;
-            margin: 15px 0;
-        }
-        #barcodeImage {
-            max-width: 100%;
-            height: 60px;
-            background: white;
-            padding: 5px;
-            border-radius: 4px;
-        }
-        .barcode-number {
-            font-size: 20px;
-            font-weight: bold;
-            color: #00d4ff;
-            margin-top: 5px;
-        }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        .form-group label {
-            display: block;
-            font-size: 13px;
-            font-weight: 600;
-            color: #8aa0c0;
-            margin-bottom: 4px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            width: 100%;
-            padding: 12px 14px;
-            border-radius: 10px;
-            border: 1px solid #2a3a5a;
-            background: #0f1729;
-            color: #e0e0e0;
-            font-size: 16px;
-            transition: border 0.3s;
-        }
-        .form-group input:focus,
-        .form-group select:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: #00d4ff;
-            box-shadow: 0 0 15px rgba(0, 212, 255, 0.1);
-        }
-        .form-group input:disabled,
-        .form-group select:disabled,
-        .form-group textarea:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        .form-group textarea {
-            resize: vertical;
-            min-height: 50px;
-        }
-        .checkbox-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 0;
-        }
-        .checkbox-group input[type="checkbox"] {
-            width: 22px;
-            height: 22px;
-            accent-color: #00d4ff;
-            cursor: pointer;
-        }
-        .checkbox-group label {
-            font-size: 16px;
-            font-weight: 500;
-            color: #c0d0e0;
-            cursor: pointer;
-        }
-        .btn {
-            width: 100%;
-            padding: 14px;
-            border: none;
-            border-radius: 12px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        .btn-primary {
-            background: linear-gradient(135deg, #00d4ff, #0088cc);
-            color: #0a0e17;
-        }
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0, 212, 255, 0.4);
-        }
-        .btn-primary:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-            transform: none;
-        }
-        .btn-success {
-            background: linear-gradient(135deg, #00e676, #00c853);
-            color: #0a0e17;
-        }
-        .btn-success:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0, 230, 118, 0.4);
-        }
-        .btn-danger {
-            background: linear-gradient(135deg, #ff5252, #d32f2f);
-            color: #fff;
-        }
-        .btn-danger:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(255, 82, 82, 0.4);
-        }
-        .btn-secondary {
-            background: #1e2a3d;
-            color: #8aa0c0;
-        }
-        .btn-secondary:hover {
-            background: #2a3a5a;
-        }
-        .hidden {
-            display: none !important;
-        }
-        .alert {
-            padding: 12px 16px;
-            border-radius: 10px;
-            margin: 10px 0;
-            font-weight: 500;
-        }
-        .alert-error {
-            background: #2a1515;
-            border-left: 4px solid #ff5252;
-            color: #ff8a80;
-        }
-        .alert-success {
-            background: #152a1a;
-            border-left: 4px solid #00e676;
-            color: #69f0ae;
-        }
-        .alert-info {
-            background: #15222a;
-            border-left: 4px solid #00d4ff;
-            color: #80d8ff;
-        }
-        .flex-row {
-            display: flex;
-            gap: 10px;
-        }
-        .flex-row .btn {
-            flex: 1;
-        }
-        .readonly-label {
-            color: #4a6a8a;
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 2px;
-        }
-        .readonly-value {
-            padding: 10px 14px;
-            background: #0a0e17;
-            border-radius: 8px;
-            font-size: 16px;
-            color: #80d8ff;
-            border: 1px solid #1a2a3a;
-            margin-bottom: 10px;
-            word-break: break-all;
-        }
-        @media (max-width: 480px) {
-            body {
-                padding: 10px;
-            }
-            .container {
-                padding: 15px;
-            }
-            h1 {
-                font-size: 20px;
-            }
-            .form-group input,
-            .form-group select,
-            .form-group textarea {
-                font-size: 14px;
-                padding: 10px;
-            }
-        }
-    </style>
+  <title>Face CRM</title>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/face_detection.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+  <style>
+    body { margin:0; background:#0a0a0a; color:#0f0; font-family:monospace; display:flex; height:100vh; overflow:hidden; }
+    #cam { position:relative; width:60%; height:100%; }
+    #video { width:100%; height:100%; object-fit:cover; }
+    #canvas { position:absolute; top:0; left:0; width:100%; height:100%; }
+    #chat { width:40%; padding:20px; display:flex; flex-direction:column; background:#111; border-left:2px solid #0f0; }
+    #log { flex:1; overflow-y:auto; margin-bottom:10px; }
+    .msg { padding:8px; margin:4px 0; border-bottom:1px solid #222; }
+    .user { color:#0ff; }
+    .bot { color:#0f0; }
+    #input-area { display:flex; gap:10px; }
+    #input { flex:1; background:#222; border:1px solid #0f0; color:#fff; padding:10px; }
+    #mic { background:#0f0; color:#000; border:none; padding:10px; cursor:pointer; border-radius:4px; }
+    #speak-btn { background:#00f; color:#fff; border:none; padding:10px; cursor:pointer; border-radius:4px; }
+    .status { font-size:12px; color:#555; }
+  </style>
 </head>
 <body>
 
-    <div class="container" id="app">
-        <h1>🎮 PS REPAIR TRACKER</h1>
-
-        <!-- Status Badge -->
-        <div class="status-badge" id="statusBadge">📷 SCAN A BARCODE TO START</div>
-
-        <!-- Scanner -->
-        <div class="scanner-box">
-            <div id="reader"></div>
-        </div>
-
-        <!-- Camera Toggle -->
-        <div class="camera-toggle">
-            <button id="camFront" class="active">📱 Rear Camera</button>
-            <button id="camBack">💻 PC Webcam</button>
-        </div>
-
-        <!-- Generate New Barcode -->
-        <div class="flex-row" style="margin-bottom:15px;">
-            <button class="btn btn-secondary" id="genBarcodeBtn">🆕 Generate New Barcode</button>
-        </div>
-
-        <!-- Barcode Display -->
-        <div class="barcode-display" id="barcodeDisplay">
-            <svg id="barcodeImage"></svg>
-            <div class="barcode-number" id="barcodeNumber">-</div>
-        </div>
-
-        <!-- Alert Messages -->
-        <div id="alertContainer"></div>
-
-        <!-- ===== ENTRY FORM ===== -->
-        <div id="entryForm" class="hidden">
-            <h3 style="color:#00d4ff; margin-bottom:15px;">📥 ENTRY</h3>
-
-            <div class="form-group">
-                <label>Barcode (Auto-filled)</label>
-                <input type="text" id="entryBarcode" disabled />
-            </div>
-
-            <div class="form-group">
-                <label>Customer Name *</label>
-                <input type="text" id="entryName" placeholder="e.g., John Doe" />
-            </div>
-
-            <div class="form-group">
-                <label>Phone Number *</label>
-                <input type="tel" id="entryPhone" placeholder="e.g., 555-1234" />
-            </div>
-
-            <div class="form-group">
-                <label>Device Model *</label>
-                <select id="entryModel">
-                    <option value="PS5">PS5</option>
-                    <option value="PS4 Pro">PS4 Pro</option>
-                    <option value="PS4 Slim">PS4 Slim</option>
-                    <option value="PS4">PS4</option>
-                    <option value="PS3">PS3</option>
-                    <option value="PS Vita">PS Vita</option>
-                    <option value="Other">Other</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>Issue Description *</label>
-                <textarea id="entryIssue" placeholder="e.g., HDMI port broken, disc drive not reading..."></textarea>
-            </div>
-
-            <div class="checkbox-group">
-                <input type="checkbox" id="entryPrePaid" />
-                <label for="entryPrePaid">✅ Pre-Paid (fully paid upfront)</label>
-            </div>
-
-            <button class="btn btn-primary" id="saveEntryBtn">💾 SAVE ENTRY</button>
-        </div>
-
-        <!-- ===== FINISH FORM ===== -->
-        <div id="finishForm" class="hidden">
-            <h3 style="color:#00e676; margin-bottom:15px;">✅ FINISH / PICKUP</h3>
-
-            <div class="readonly-label">Barcode</div>
-            <div class="readonly-value" id="finishBarcode">-</div>
-
-            <div class="readonly-label">Customer</div>
-            <div class="readonly-value" id="finishName">-</div>
-
-            <div class="readonly-label">Phone</div>
-            <div class="readonly-value" id="finishPhone">-</div>
-
-            <div class="readonly-label">Model</div>
-            <div class="readonly-value" id="finishModel">-</div>
-
-            <div class="readonly-label">Issue</div>
-            <div class="readonly-value" id="finishIssue">-</div>
-
-            <div class="readonly-label">Pre-Paid?</div>
-            <div class="readonly-value" id="finishPrePaid">-</div>
-
-            <div class="readonly-label">Entry Date / Time</div>
-            <div class="readonly-value" id="finishEntryDateTime">-</div>
-
-            <div class="form-group">
-                <label>Final Price *</label>
-                <input type="text" id="finishPrice" placeholder="e.g., $85.00 or 85" />
-            </div>
-
-            <button class="btn btn-success" id="saveFinishBtn">💾 SAVE FINISHED</button>
-        </div>
-
-        <!-- ===== ADMIN EDIT (Hidden) ===== -->
-        <div id="adminPanel" class="hidden" style="margin-top:20px; border-top:2px solid #ff5252; padding-top:15px;">
-            <h3 style="color:#ff5252;">🔐 ADMIN EDIT MODE</h3>
-            <p style="font-size:13px; color:#8aa0c0;">Press Ctrl+Shift+E to toggle. Edits are logged with initials.</p>
-            <div class="form-group">
-                <label>Staff Initials</label>
-                <input type="text" id="adminInitials" placeholder="e.g., JD" maxlength="3" />
-            </div>
-            <div class="flex-row">
-                <button class="btn btn-danger" id="adminEditBtn">✏️ Edit Current Record</button>
-            </div>
-        </div>
-
-    </div>
-
-    <script>
-        // ============================================================
-        // CONFIGURATION
-        // ============================================================
-        const API_URL = "https://script.google.com/macros/s/AKfycbxRGkyjxUnVk9QFLfTFTOm1YzLzdw9BQzKoGc8A_prdq0szFap3of8hUDfNSESbZopi/exec"; // ⚠️ PASTE YOUR DEPLOYED URL HERE
-
-        // ============================================================
-        // STATE
-        // ============================================================
-        let currentBarcode = null;
-        let currentRecord = null;
-        let isAdminMode = false;
-        let cameraFacing = "environment"; // "environment" = rear, "user" = front/webcam
-
-        // ============================================================
-        // DOM REFS
-        // ============================================================
-        const $ = (id) => document.getElementById(id);
-        const statusBadge = $('statusBadge');
-        const alertContainer = $('alertContainer');
-        const entryForm = $('entryForm');
-        const finishForm = $('finishForm');
-        const barcodeImage = $('barcodeImage');
-        const barcodeNumber = $('barcodeNumber');
-
-        // ============================================================
-        // ALERT SYSTEM
-        // ============================================================
-        function showAlert(message, type = 'info') {
-            alertContainer.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
-            setTimeout(() => { alertContainer.innerHTML = ''; }, 5000);
-        }
-
-        // ============================================================
-        // API CALLS
-        // ============================================================
-        async function apiCall(action, params = {}) {
-            const url = new URL(API_URL);
-            url.searchParams.append('action', action);
-            Object.keys(params).forEach(key => {
-                url.searchParams.append(key, params[key]);
-            });
-
-            try {
-                const response = await fetch(url.toString(), {
-                    method: 'POST',
-                    mode: 'no-cors' // Needed for Google Apps Script
-                });
-                // Due to no-cors, we can't read the response directly.
-                // We'll use a workaround: Google Apps Script returns JSON via ContentService.
-                // Since no-cors blocks reading, we use a GET approach instead.
-                // Actually, let's use GET for all calls to keep it simple.
-                const getUrl = new URL(API_URL);
-                getUrl.searchParams.append('action', action);
-                Object.keys(params).forEach(key => {
-                    getUrl.searchParams.append(key, params[key]);
-                });
-                const getResponse = await fetch(getUrl.toString());
-                const data = await getResponse.json();
-                return data;
-            } catch (error) {
-                console.error('API Error:', error);
-                return { success: false, error: error.message };
-            }
-        }
-
-        // We'll rewrite API calls to use GET consistently
-        async function apiGet(action, params = {}) {
-            const url = new URL(API_URL);
-            url.searchParams.append('action', action);
-            Object.keys(params).forEach(key => {
-                url.searchParams.append(key, params[key]);
-            });
-            try {
-                const response = await fetch(url.toString());
-                const data = await response.json();
-                return data;
-            } catch (error) {
-                console.error('API Error:', error);
-                return { success: false, error: error.message };
-            }
-        }
-
-        // ============================================================
-        // GENERATE NEW BARCODE
-        // ============================================================
-        async function generateNewBarcode() {
-            const result = await apiGet('getNextBarcode');
-            if (result.success && result.data) {
-                const barcode = result.data.nextBarcode;
-                currentBarcode = barcode;
-                renderBarcode(barcode);
-                showAlert(`✅ New barcode generated: ${barcode}`, 'success');
-                // Auto-fill entry form
-                $('entryBarcode').value = barcode;
-                showEntryForm();
-            } else {
-                showAlert('❌ Failed to generate barcode: ' + (result.error || 'Unknown error'), 'error');
-            }
-        }
-
-        // ============================================================
-        // RENDER BARCODE
-        // ============================================================
-        function renderBarcode(code) {
-            try {
-                JsBarcode("#barcodeImage", code, {
-                    format: "CODE128",
-                    width: 2,
-                    height: 60,
-                    displayValue: false,
-                    background: "#ffffff",
-                    lineColor: "#000000",
-                    margin: 5
-                });
-                barcodeNumber.textContent = code;
-            } catch (e) {
-                console.error('Barcode render error:', e);
-                barcodeNumber.textContent = code || '-';
-            }
-        }
-
-        // ============================================================
-        // SHOW/HIDE FORMS
-        // ============================================================
-        function showEntryForm() {
-            entryForm.classList.remove('hidden');
-            finishForm.classList.add('hidden');
-            statusBadge.textContent = '📥 ENTRY MODE - Fill in customer details';
-            statusBadge.style.borderLeftColor = '#00d4ff';
-            // Enable fields
-            ['entryName', 'entryPhone', 'entryIssue'].forEach(id => {
-                $(id).disabled = false;
-                $(id).value = '';
-            });
-            $('entryModel').disabled = false;
-            $('entryModel').value = 'PS5';
-            $('entryPrePaid').checked = false;
-            $('saveEntryBtn').disabled = false;
-        }
-
-        function showFinishForm(record) {
-            entryForm.classList.add('hidden');
-            finishForm.classList.remove('hidden');
-            statusBadge.textContent = '✅ FINISH MODE - Enter final price';
-            statusBadge.style.borderLeftColor = '#00e676';
-
-            $('finishBarcode').textContent = record.barcode;
-            $('finishName').textContent = record.name;
-            $('finishPhone').textContent = record.phone;
-            $('finishModel').textContent = record.model;
-            $('finishIssue').textContent = record.issue;
-            $('finishPrePaid').textContent = record.prePaid === 'TRUE' ? '✅ YES' : '❌ NO';
-            $('finishEntryDateTime').textContent = `${record.entryDate} ${record.entryTime}`;
-            $('finishPrice').value = '';
-            $('saveFinishBtn').disabled = false;
-            currentRecord = record;
-        }
-
-        function showScanMode() {
-            entryForm.classList.add('hidden');
-            finishForm.classList.add('hidden');
-            statusBadge.textContent = '📷 SCAN A BARCODE TO START';
-            statusBadge.style.borderLeftColor = '#00d4ff';
-        }
-
-        // ============================================================
-        // HANDLE SCAN
-        // ============================================================
-        async function handleScan(decodedText) {
-            // Ignore if we're currently in a form
-            if (!entryForm.classList.contains('hidden') || !finishForm.classList.contains('hidden')) {
-                // If we're already in a form, maybe they want to scan a new one? 
-                // We'll reset and proceed.
-            }
-
-            const barcode = decodedText.trim();
-            if (!barcode || isNaN(Number(barcode))) {
-                showAlert('⚠️ Invalid barcode format. Please scan a numeric code.', 'error');
-                return;
-            }
-
-            currentBarcode = barcode;
-            renderBarcode(barcode);
-
-            // Check if this barcode exists
-            const result = await apiGet('getRecord', { barcode: barcode });
-
-            if (!result.success) {
-                // Barcode not found = NEW ENTRY
-                showAlert(`📥 New device detected. Please fill in entry details.`, 'info');
-                $('entryBarcode').value = barcode;
-                // Clear previous values
-                ['entryName', 'entryPhone', 'entryIssue'].forEach(id => {
-                    $(id).value = '';
-                    $(id).disabled = false;
-                });
-                $('entryModel').disabled = false;
-                $('entryModel').value = 'PS5';
-                $('entryPrePaid').checked = false;
-                $('saveEntryBtn').disabled = false;
-                showEntryForm();
-            } else {
-                // Barcode exists
-                const record = result.data;
-                if (record.isArchived === 'TRUE') {
-                    showAlert(`🔒 This device (${barcode}) is already finished and locked.`, 'error');
-                    showScanMode();
-                    return;
-                }
-                // Show finish form
-                showAlert(`✅ Device found. Enter final price to finish.`, 'success');
-                showFinishForm(record);
-            }
-        }
-
-        // ============================================================
-        // SAVE ENTRY
-        // ============================================================
-        async function saveEntry() {
-            const barcode = $('entryBarcode').value;
-            const name = $('entryName').value.trim();
-            const phone = $('entryPhone').value.trim();
-            const model = $('entryModel').value;
-            const issue = $('entryIssue').value.trim();
-            const prePaid = $('entryPrePaid').checked ? 'TRUE' : 'FALSE';
-
-            if (!name || !phone || !issue) {
-                showAlert('⚠️ Please fill in Name, Phone, and Issue Description.', 'error');
-                return;
-            }
-
-            $('saveEntryBtn').disabled = true;
-            $('saveEntryBtn').textContent = 'SAVING...';
-
-            const result = await apiGet('saveEntry', {
-                barcode: barcode,
-                name: name,
-                phone: phone,
-                model: model,
-                issue: issue,
-                prePaid: prePaid
-            });
-
-            $('saveEntryBtn').disabled = false;
-            $('saveEntryBtn').textContent = '💾 SAVE ENTRY';
-
-            if (result.success) {
-                showAlert(`✅ Entry saved for ${name} (${barcode})`, 'success');
-                // Lock the form
-                ['entryName', 'entryPhone', 'entryIssue'].forEach(id => {
-                    $(id).disabled = true;
-                });
-                $('entryModel').disabled = true;
-                $('entryPrePaid').disabled = true;
-                $('saveEntryBtn').disabled = true;
-                statusBadge.textContent = `🔒 ENTRY LOCKED - ${name} (${barcode}) is in repair`;
-                statusBadge.style.borderLeftColor = '#ffa726';
-            } else {
-                showAlert('❌ Failed to save: ' + (result.error || 'Unknown error'), 'error');
-            }
-        }
-
-        // ============================================================
-        // SAVE FINISH
-        // ============================================================
-        async function saveFinish() {
-            const barcode = $('finishBarcode').textContent;
-            const price = $('finishPrice').value.trim();
-
-            if (!price) {
-                showAlert('⚠️ Please enter the final price.', 'error');
-                return;
-            }
-
-            $('saveFinishBtn').disabled = true;
-            $('saveFinishBtn').textContent = 'SAVING...';
-
-            const result = await apiGet('saveFinish', {
-                barcode: barcode,
-                finalPrice: price
-            });
-
-            $('saveFinishBtn').disabled = false;
-            $('saveFinishBtn').textContent = '💾 SAVE FINISHED';
-
-            if (result.success) {
-                showAlert(`✅ ${barcode} marked as FINISHED! Ready for pickup.`, 'success');
-                finishForm.classList.add('hidden');
-                showScanMode();
-                // Reset scanner
-                startScanner();
-            } else {
-                showAlert('❌ Failed to finish: ' + (result.error || 'Unknown error'), 'error');
-            }
-        }
-
-        // ============================================================
-        // BARCODE SCANNER
-        // ============================================================
-        let html5QrCode = null;
-
-        function startScanner() {
-            if (html5QrCode) {
-                html5QrCode.stop().then(() => {
-                    html5QrCode.clear();
-                    initializeScanner();
-                }).catch(() => {
-                    initializeScanner();
-                });
-            } else {
-                initializeScanner();
-            }
-        }
-
-        function initializeScanner() {
-            const readerElement = $('reader');
-            readerElement.innerHTML = '';
-
-            const config = {
-                fps: 15,
-                qrbox: { width: 280, height: 200 },
-                aspectRatio: 1.0,
-                formatsToSupport: [
-                    Html5QrcodeSupportedFormats.CODE_128,
-                    Html5QrcodeSupportedFormats.CODE_39,
-                    Html5QrcodeSupportedFormats.EAN_13,
-                    Html5QrcodeSupportedFormats.UPC_A,
-                    Html5QrcodeSupportedFormats.CODABAR
-                ]
-            };
-
-            html5QrCode = new Html5Qrcode("reader");
-
-            const constraints = {
-                facingMode: cameraFacing,
-                width: { ideal: 640 },
-                height: { ideal: 480 }
-            };
-
-            html5QrCode.start(
-                constraints,
-                config,
-                (decodedText) => {
-                    // Success callback
-                    html5QrCode.stop().then(() => {
-                        handleScan(decodedText);
-                    }).catch(() => {
-                        handleScan(decodedText);
-                    });
-                },
-                (errorMessage) => {
-                    // Ignore scanning errors (they happen constantly)
-                    // console.debug(errorMessage);
-                }
-            ).catch((err) => {
-                console.error('Camera start error:', err);
-                showAlert('⚠️ Cannot access camera. Please allow camera permissions.', 'error');
-            });
-        }
-
-        // ============================================================
-        // CAMERA TOGGLE
-        // ============================================================
-        function setCamera(facingMode) {
-            cameraFacing = facingMode;
-            document.querySelectorAll('.camera-toggle button').forEach(btn => btn.classList.remove('active'));
-            if (facingMode === 'environment') {
-                $('camFront').classList.add('active');
-            } else {
-                $('camBack').classList.add('active');
-            }
-            // Restart scanner
-            if (html5QrCode) {
-                html5QrCode.stop().then(() => {
-                    startScanner();
-                }).catch(() => {
-                    startScanner();
-                });
-            } else {
-                startScanner();
-            }
-        }
-
-        // ============================================================
-        // ADMIN MODE TOGGLE (Ctrl+Shift+E)
-        // ============================================================
-        document.addEventListener('keydown', (e) => {
-            if (e.ctrlKey && e.shiftKey && (e.key === 'E' || e.key === 'e')) {
-                e.preventDefault();
-                isAdminMode = !isAdminMode;
-                $('adminPanel').classList.toggle('hidden', !isAdminMode);
-                if (isAdminMode) {
-                    showAlert('🔐 ADMIN MODE ENABLED - Edit at your own risk', 'info');
-                } else {
-                    showAlert('🔐 ADMIN MODE DISABLED', 'info');
-                }
-            }
-        });
-
-        // ============================================================
-        // ADMIN EDIT (placeholder - you can implement full edit later)
-        // ============================================================
-        $('adminEditBtn').addEventListener('click', () => {
-            const initials = $('adminInitials').value.trim();
-            if (!initials) {
-                showAlert('⚠️ Please enter your staff initials first.', 'error');
-                return;
-            }
-            if (!currentBarcode) {
-                showAlert('⚠️ No record loaded. Scan a barcode first.', 'error');
-                return;
-            }
-            showAlert(`🔓 Admin edit for ${currentBarcode} logged by ${initials}. (Full edit UI coming soon!)`, 'info');
-        });
-
-        // ============================================================
-        // EVENT BINDINGS
-        // ============================================================
-        $('genBarcodeBtn').addEventListener('click', generateNewBarcode);
-        $('saveEntryBtn').addEventListener('click', saveEntry);
-        $('saveFinishBtn').addEventListener('click', saveFinish);
-        $('camFront').addEventListener('click', () => setCamera('environment'));
-        $('camBack').addEventListener('click', () => setCamera('user'));
-
-        // ============================================================
-        // INIT
-        // ============================================================
-        renderBarcode('SCAN');
-        showScanMode();
-        startScanner();
-
-        console.log('🎮 PS Repair Tracker initialized.');
-        console.log('📌 Press Ctrl+Shift+E for Admin Mode.');
-        console.log('📌 API URL:', API_URL);
-    </script>
-
+<div id="cam">
+  <video id="video" playsinline></video>
+  <canvas id="canvas"></canvas>
+</div>
+
+<div id="chat">
+  <h2>🌀 AI Clerk</h2>
+  <div id="log"><div class="bot msg">Ready. Say "add sale" or "get last".</div></div>
+  <div id="input-area">
+    <input id="input" placeholder="Type command...">
+    <button id="mic">🎤 Speak</button>
+    <button id="speak-btn">🔊 Echo</button>
+  </div>
+  <div class="status" id="status">Face detection: loading...</div>
+</div>
+
+<script>
+// --- CONFIG ---
+const SCRIPT_URL = "YOUR_APPS_SCRIPT_URL_HERE"; // PASTE YOUR DEPLOYED URL
+
+// --- DOM ---
+const video = document.getElementById('video');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const logDiv = document.getElementById('log');
+const input = document.getElementById('input');
+const micBtn = document.getElementById('mic');
+const speakBtn = document.getElementById('speak-btn');
+const statusDiv = document.getElementById('status');
+
+// --- SPEECH ---
+function speak(text) {
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'en-US';
+  u.rate = 0.9;
+  speechSynthesis.cancel();
+  speechSynthesis.speak(u);
+}
+
+function listen() {
+  const r = new webkitSpeechRecognition();
+  r.lang = 'en-US';
+  r.onresult = (e) => {
+    const q = e.results[0][0].transcript;
+    input.value = q;
+    handleCommand(q);
+  };
+  r.start();
+}
+
+// --- UI LOG ---
+function addLog(text, cls = 'bot') {
+  const d = document.createElement('div');
+  d.className = `msg ${cls}`;
+  d.textContent = text;
+  logDiv.appendChild(d);
+  logDiv.scrollTop = logDiv.scrollHeight;
+}
+
+// --- BACKEND CALL ---
+async function callSheet(action, item = '', value = '') {
+  try {
+    const res = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action, item, value }),
+      headers: { 'Content-Type': 'application/json' }
+    });
+    return await res.json();
+  } catch (e) {
+    return { status: 'error', msg: e.message };
+  }
+}
+
+// --- COMMAND PARSER ---
+async function handleCommand(raw) {
+  const txt = raw.toLowerCase().trim();
+  addLog(`You: ${raw}`, 'user');
+
+  if (txt.startsWith('add sale')) {
+    const parts = raw.split(' ').slice(2); // assumes "add sale item value"
+    if (parts.length < 2) {
+      const reply = "Need item name and value.";
+      addLog(reply);
+      speak(reply);
+      return;
+    }
+    const item = parts.slice(0, -1).join(' ');
+    const value = parts[parts.length - 1];
+    const res = await callSheet('add', item, value);
+    const reply = res.status === 'saved' ? `Saved ${item} for ${value}` : `Error: ${res.msg}`;
+    addLog(reply);
+    speak(reply);
+    return;
+  }
+
+  if (txt === 'get last') {
+    const res = await callSheet('get');
+    if (res.status === 'ok') {
+      const reply = `Last entry: ${res.data[1]} at ${res.data[2] || 'N/A'}`;
+      addLog(reply);
+      speak(reply);
+    } else {
+      addLog('No data or error.');
+    }
+    return;
+  }
+
+  const reply = "Say 'add sale [item] [price]' or 'get last'.";
+  addLog(reply);
+  speak(reply);
+}
+
+// --- FACE DETECTION (MediaPipe) ---
+function initFace() {
+  const faceDetection = new FaceDetection({
+    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/${file}`
+  });
+
+  faceDetection.setOptions({
+    model: 'short',
+    minDetectionConfidence: 0.5
+  });
+
+  faceDetection.onResults((results) => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    if (results.detections.length > 0) {
+      statusDiv.innerText = '✅ Face detected!';
+      for (const det of results.detections) {
+        const bbox = det.boundingBox;
+        const x = bbox.xMin * canvas.width;
+        const y = bbox.yMin * canvas.height;
+        const w = (bbox.xMax - bbox.xMin) * canvas.width;
+        const h = (bbox.yMax - bbox.yMin) * canvas.height;
+
+        // Neon bounding box
+        ctx.strokeStyle = '#0f0';
+        ctx.lineWidth = 3;
+        ctx.shadowColor = '#0f0';
+        ctx.shadowBlur = 10;
+        ctx.strokeRect(x, y, w, h);
+
+        // Fun "customer glasses" (two circles)
+        const cx = x + w/2;
+        const cy = y + h/3;
+        const eyeR = w * 0.15;
+        ctx.strokeStyle = '#ff00ff';
+        ctx.lineWidth = 2;
+        ctx.shadowColor = '#ff00ff';
+        ctx.shadowBlur = 15;
+        ctx.beginPath();
+        ctx.arc(cx - eyeR*1.8, cy, eyeR, 0, 2*Math.PI);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(cx + eyeR*1.8, cy, eyeR, 0, 2*Math.PI);
+        ctx.stroke();
+        // bridge
+        ctx.beginPath();
+        ctx.moveTo(cx - eyeR*0.8, cy);
+        ctx.lineTo(cx + eyeR*0.8, cy);
+        ctx.stroke();
+      }
+    } else {
+      statusDiv.innerText = '👤 No face. Look at camera.';
+    }
+  });
+
+  const camera = new Camera(video, {
+    onFrame: async () => { await faceDetection.send({ image: video }); },
+    width: 640,
+    height: 480
+  });
+  camera.start();
+}
+
+// --- EVENTS ---
+micBtn.onclick = listen;
+speakBtn.onclick = () => speak('System ready.');
+input.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') handleCommand(input.value);
+});
+
+// --- INIT ---
+initFace();
+</script>
 </body>
 </html>
