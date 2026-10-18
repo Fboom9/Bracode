@@ -1,241 +1,108 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Face CRM + PS Store</title>
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/face_detection.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
-  <style>
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body { background:#0a0a0a; color:#0f0; font-family:monospace; display:flex; height:100vh; overflow:hidden; }
-    #cam { position:relative; width:60%; height:100%; background:#000; }
-    #video { width:100%; height:100%; object-fit:cover; }
-    #canvas { position:absolute; top:0; left:0; width:100%; height:100%; }
-    #chat { width:40%; padding:20px; display:flex; flex-direction:column; background:#111; border-left:2px solid #0f0; }
-    #log { flex:1; overflow-y:auto; margin-bottom:10px; }
-    .msg { padding:8px; margin:4px 0; border-bottom:1px solid #222; }
-    .user { color:#0ff; }
-    .bot { color:#0f0; }
-    #input-area { display:flex; gap:10px; flex-wrap:wrap; }
-    #input { flex:1; background:#222; border:1px solid #0f0; color:#fff; padding:10px; min-width:120px; }
-    #mic, #speak-btn { background:#0f0; color:#000; border:none; padding:10px 15px; cursor:pointer; border-radius:4px; font-weight:bold; }
-    #speak-btn { background:#00f; color:#fff; }
-    .status { font-size:12px; color:#555; margin-top:8px; }
-    #float-price { position:absolute; bottom:20px; left:20px; background:rgba(0,0,0,0.8); color:#0f0; padding:12px 20px; border:1px solid #0f0; border-radius:8px; font-size:18px; display:none; }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Production Order</title>
+<style>
+:root{--bg:#f5f6f8;--card:#fff;--text:#16181d;--muted:#6b7280;--line:#e3e6eb;--accent:#0f766e;--accent-t:#fff}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1114;--card:#1a1d22;--text:#eef0f3;--muted:#98a0ab;--line:#2a2f36;--accent:#2dd4bf;--accent-t:#06201d}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding-bottom:120px}
+header{padding:20px 16px 8px;max-width:640px;margin:auto}
+h1{font-size:22px;margin:0}
+main{max-width:640px;margin:auto;padding:0 16px}
+label.f{display:block;font-size:13px;color:var(--muted);margin:14px 0 6px}
+select,input[type=text],textarea{width:100%;padding:12px;font:inherit;color:var(--text);background:var(--card);border:1px solid var(--line);border-radius:10px}
+.list{background:var(--card);border:1px solid var(--line);border-radius:12px;margin-top:16px}
+.row{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--line);gap:8px}
+.row:last-child{border:0}
+.name{flex:1;font-weight:500}
+.step{display:flex;align-items:center;gap:6px}
+.step button{width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--text);font-size:22px;line-height:1}
+.step input{width:56px;height:40px;text-align:center;font:inherit;color:var(--text);background:var(--card);border:1px solid var(--line);border-radius:10px}
+.row.on .name{color:var(--accent)}
+.bar{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px))}
+.bar div{max-width:640px;margin:auto;display:flex;gap:8px;align-items:center}
+.bar span{flex:1;font-size:14px;color:var(--muted)}
+.btn{padding:12px 16px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--text);font:inherit;font-weight:600}
+.btn.p{background:var(--accent);color:var(--accent-t);border-color:var(--accent)}
+.btn:disabled{opacity:.4}
+.link{background:none;border:0;color:var(--muted);text-decoration:underline;font:inherit;margin:12px 0}
+</style>
 </head>
 <body>
-
-<div id="cam">
-  <video id="video" playsinline></video>
-  <canvas id="canvas"></canvas>
-  <div id="float-price">🎮 Game found</div>
-</div>
-
-<div id="chat">
-  <h2>🌀 AI Clerk + PS Scanner</h2>
-  <div id="log">
-    <div class="bot msg">Ready. Say: "add sale [item] [price]", "get last", or "search [game]"</div>
-  </div>
-  <div id="input-area">
-    <input id="input" placeholder="Type command...">
-    <button id="mic">🎤 Speak</button>
-    <button id="speak-btn">🔊 Test Voice</button>
-  </div>
-  <div class="status" id="status">Face detection: loading...</div>
-</div>
+<header><h1>Production Order</h1></header>
+<main>
+  <label class="f" for="dist">Order for (distributor)</label>
+  <select id="dist"></select>
+  <div class="list" id="list"></div>
+  <label class="f" for="note">Notes (optional)</label>
+  <textarea id="note" rows="2"></textarea>
+  <button class="link" id="reset">Clear quantities</button>
+</main>
+<div class="bar"><div>
+  <span id="total">0 items</span>
+  <button class="btn" id="copy" disabled>Copy</button>
+  <button class="btn p" id="send" disabled>Send</button>
+</div></div>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzv_Qo6Z4rInIVkGj3RKvf6dB0o8mgC0OlvXVj7a4jHXA4RDW0oDYlzpMKL9zSRTJ0b/exec";
+/* ====== EDIT THIS SECTION ====== */
+const PRODUCTS = [
+  "Product 1","Product 2","Product 3","Product 4","Product 5","Product 6","Product 7",
+  "Product 8","Product 9","Product 10","Product 11","Product 12","Product 13"
+];
+const DISTRIBUTORS = ["Distributor A","Distributor B","Distributor C"];
+// Production WhatsApp number, international format, digits only (e.g. 962791234567). Leave "" to pick a contact when sending.
+const WHATSAPP = "";
+/* =============================== */
 
-const video = document.getElementById('video');
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
-const logDiv = document.getElementById('log');
-const input = document.getElementById('input');
-const micBtn = document.getElementById('mic');
-const speakBtn = document.getElementById('speak-btn');
-const statusDiv = document.getElementById('status');
-const floatPrice = document.getElementById('float-price');
+const qty = PRODUCTS.map(() => 0);
+const $ = id => document.getElementById(id);
+const dist = $("dist"), list = $("list");
 
-function speak(text) {
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = 'en-US';
-  u.rate = 0.9;
-  speechSynthesis.cancel();
-  speechSynthesis.speak(u);
-}
+dist.innerHTML = DISTRIBUTORS.map(d => `<option>${d}</option>`).join("");
+try { const s = localStorage.getItem("dist"); if (s && DISTRIBUTORS.includes(s)) dist.value = s; } catch (e) {}
+dist.onchange = () => { try { localStorage.setItem("dist", dist.value); } catch (e) {} };
 
-function listen() {
-  const r = new webkitSpeechRecognition();
-  r.lang = 'en-US';
-  r.onresult = (e) => {
-    const q = e.results[0][0].transcript;
-    input.value = q;
-    handleCommand(q);
-  };
-  r.start();
-}
-
-function addLog(text, cls = 'bot') {
-  const d = document.createElement('div');
-  d.className = `msg ${cls}`;
-  d.textContent = text;
-  logDiv.appendChild(d);
-  logDiv.scrollTop = logDiv.scrollHeight;
-}
-
-async function callSheet(action, item = '', value = '') {
-  try {
-    const body = { action };
-    if (action === 'add') { body.item = item; body.value = value; }
-    if (action === 'search_ps') { body.query = item; }
-    const res = await fetch(SCRIPT_URL, {
-      method: 'POST',
-      body: JSON.stringify(body),
-      headers: { 'Content-Type': 'application/json' }
-    });
-    return await res.json();
-  } catch (e) {
-    return { status: 'error', msg: e.message };
-  }
-}
-
-async function handleCommand(raw) {
-  const txt = raw.toLowerCase().trim();
-  addLog(`You: ${raw}`, 'user');
-
-  if (txt.startsWith('add sale')) {
-    const parts = raw.split(' ').slice(2);
-    if (parts.length < 2) {
-      const reply = "Need item and price. Example: add sale headset 50";
-      addLog(reply); speak(reply); return;
-    }
-    const item = parts.slice(0, -1).join(' ');
-    const value = parts[parts.length - 1];
-    const res = await callSheet('add', item, value);
-    const reply = res.status === 'saved' ? `Saved ${item} for $${value}` : `Error: ${res.msg}`;
-    addLog(reply); speak(reply);
-    return;
-  }
-
-  if (txt === 'get last') {
-    const res = await callSheet('get');
-    if (res.status === 'ok' && res.data && res.data[1]) {
-      const reply = `Last entry: ${res.data[1]} at ${res.data[2] || 'N/A'}`;
-      addLog(reply); speak(reply);
-    } else {
-      const reply = 'No sales yet.';
-      addLog(reply); speak(reply);
-    }
-    return;
-  }
-
-  if (txt.startsWith('search') || txt.startsWith('find')) {
-    let query = raw.slice(txt.startsWith('search') ? 6 : 4).trim();
-    if (!query) {
-      const reply = "What game are you looking for?";
-      addLog(reply); speak(reply); return;
-    }
-
-    addLog(`Searching for "${query}"...`);
-    const res = await callSheet('search_ps', query);
-
-    if (res.status === 'error') {
-      const reply = `Error: ${res.msg}`;
-      addLog(reply); speak(reply); return;
-    }
-
-    if (!res.results || res.results.length === 0) {
-      const reply = `No results for "${query}".`;
-      addLog(reply); speak(reply); return;
-    }
-
-    const top = res.results.slice(0, 3);
-    let reply = `Found ${res.results.length}. `;
-    reply += top.map((r, i) => `${i+1}. ${r.name} - ${r.discountPrice || r.price || 'N/A'}`).join(' ');
-    addLog(reply);
-    speak(reply);
-
-    if (top[0]) {
-      floatPrice.innerText = `🎮 ${top[0].name} → ${top[0].discountPrice || top[0].price || 'N/A'}`;
-      floatPrice.style.display = 'block';
-      setTimeout(() => { floatPrice.style.display = 'none'; }, 8000);
-    }
-    return;
-  }
-
-  const reply = "Commands: 'add sale [item] [price]', 'get last', or 'search [game]'.";
-  addLog(reply);
-  speak(reply);
-}
-
-function initFace() {
-  const faceDetection = new FaceDetection({
-    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/${file}`
-  });
-
-  faceDetection.setOptions({ model: 'short', minDetectionConfidence: 0.5 });
-
-  faceDetection.onResults((results) => {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-    if (results.detections.length > 0) {
-      statusDiv.innerText = '✅ Face detected!';
-      for (const det of results.detections) {
-        const bbox = det.boundingBox;
-        const x = bbox.xMin * canvas.width;
-        const y = bbox.yMin * canvas.height;
-        const w = (bbox.xMax - bbox.xMin) * canvas.width;
-        const h = (bbox.yMax - bbox.yMin) * canvas.height;
-
-        ctx.strokeStyle = '#0f0';
-        ctx.lineWidth = 3;
-        ctx.shadowColor = '#0f0';
-        ctx.shadowBlur = 10;
-        ctx.strokeRect(x, y, w, h);
-
-        const cx = x + w/2;
-        const cy = y + h/3;
-        const eyeR = w * 0.15;
-        ctx.strokeStyle = '#ff00ff';
-        ctx.lineWidth = 2;
-        ctx.shadowColor = '#ff00ff';
-        ctx.shadowBlur = 15;
-        ctx.beginPath();
-        ctx.arc(cx - eyeR*1.8, cy, eyeR, 0, 2*Math.PI);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.arc(cx + eyeR*1.8, cy, eyeR, 0, 2*Math.PI);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(cx - eyeR*0.8, cy);
-        ctx.lineTo(cx + eyeR*0.8, cy);
-        ctx.stroke();
-      }
-    } else {
-      statusDiv.innerText = '👤 No face. Look at camera.';
-    }
-  });
-
-  const camera = new Camera(video, {
-    onFrame: async () => { await faceDetection.send({ image: video }); },
-    width: 640,
-    height: 480
-  });
-  camera.start();
-}
-
-micBtn.onclick = listen;
-speakBtn.onclick = () => speak('System ready.');
-input.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') handleCommand(input.value);
+PRODUCTS.forEach((p, i) => {
+  const r = document.createElement("div");
+  r.className = "row";
+  r.innerHTML = `<div class="name"></div><div class="step"><button type="button" aria-label="minus">−</button><input type="number" inputmode="numeric" min="0" value="0"><button type="button" aria-label="plus">+</button></div>`;
+  r.querySelector(".name").textContent = p;
+  const [m, inp, pl] = [r.querySelectorAll("button")[0], r.querySelector("input"), r.querySelectorAll("button")[1]];
+  const set = v => { qty[i] = Math.max(0, parseInt(v) || 0); inp.value = qty[i]; r.classList.toggle("on", qty[i] > 0); update(); };
+  m.onclick = () => set(qty[i] - 1);
+  pl.onclick = () => set(qty[i] + 1);
+  inp.oninput = () => set(inp.value);
+  r._set = set;
+  list.appendChild(r);
 });
 
-initFace();
+function summary() {
+  const lines = PRODUCTS.map((p, i) => qty[i] > 0 ? `• ${p}: ${qty[i]}` : null).filter(Boolean);
+  const d = new Date().toLocaleDateString("en-GB");
+  const note = $("note").value.trim();
+  return `*Order for: ${dist.value}*\nDate: ${d}\n\n${lines.join("\n")}\n\nTotal: ${qty.reduce((a, b) => a + b, 0)}` + (note ? `\nNotes: ${note}` : "");
+}
+
+function update() {
+  const t = qty.reduce((a, b) => a + b, 0), n = qty.filter(q => q > 0).length;
+  $("total").textContent = `${n} products · ${t} units`;
+  $("copy").disabled = $("send").disabled = t === 0;
+}
+
+$("send").onclick = () => {
+  window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(summary())}`, "_blank");
+};
+$("copy").onclick = async () => {
+  try { await navigator.clipboard.writeText(summary()); $("copy").textContent = "Copied"; }
+  catch (e) { prompt("Copy the order:", summary()); }
+  setTimeout(() => $("copy").textContent = "Copy", 1500);
+};
+$("reset").onclick = () => { [...list.children].forEach(r => r._set(0)); $("note").value = ""; };
+update();
 </script>
 </body>
 </html>
