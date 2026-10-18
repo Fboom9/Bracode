@@ -21,6 +21,7 @@ select,input[type=text],textarea{width:100%;padding:12px;font:inherit;color:var(
 .step{display:flex;align-items:center;gap:6px}
 .step button{width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--text);font-size:22px;line-height:1}
 .step input{width:56px;height:40px;text-align:center;font:inherit;color:var(--text);background:var(--card);border:1px solid var(--line);border-radius:10px}
+.u{font-size:14px;color:var(--muted);min-width:34px}
 .row.on .name{color:var(--accent)}
 .bar{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px))}
 .bar div{max-width:640px;margin:auto;display:flex;gap:8px;align-items:center}
@@ -69,7 +70,7 @@ dist.onchange = () => { try { localStorage.setItem("dist", dist.value); } catch 
 PRODUCTS.forEach((p, i) => {
   const r = document.createElement("div");
   r.className = "row";
-  r.innerHTML = `<div class="name"></div><div class="step"><button type="button" aria-label="minus">−</button><input type="number" inputmode="numeric" min="0" value="0"><button type="button" aria-label="plus">+</button></div>`;
+  r.innerHTML = `<div class="name"></div><div class="step"><button type="button" aria-label="minus">−</button><input type="number" inputmode="numeric" min="0" value="0"><button type="button" aria-label="plus">+</button></div><span class="u">كيلو</span>`;
   r.querySelector(".name").textContent = p;
   const [m, inp, pl] = [r.querySelectorAll("button")[0], r.querySelector("input"), r.querySelectorAll("button")[1]];
   const set = v => { qty[i] = Math.max(0, parseInt(v) || 0); inp.value = qty[i]; r.classList.toggle("on", qty[i] > 0); update(); };
@@ -81,15 +82,15 @@ PRODUCTS.forEach((p, i) => {
 });
 
 function summary() {
-  const lines = PRODUCTS.map((p, i) => qty[i] > 0 ? `• ${p}: ${qty[i]}` : null).filter(Boolean);
+  const lines = PRODUCTS.map((p, i) => qty[i] > 0 ? `• ${p}: ${qty[i]} كيلو` : null).filter(Boolean);
   const d = new Date().toLocaleDateString("en-GB");
   const note = $("note").value.trim();
-  return `*Order for: ${dist.value}*\nDate: ${d}\n\n${lines.join("\n")}\n\nTotal: ${qty.reduce((a, b) => a + b, 0)}` + (note ? `\nNotes: ${note}` : "");
+  return `*Order for: ${dist.value}*\nDate: ${d}\n\n${lines.join("\n")}\n\nTotal: ${qty.reduce((a, b) => a + b, 0)} كيلو` + (note ? `\nNotes: ${note}` : "");
 }
 
 function update() {
   const t = qty.reduce((a, b) => a + b, 0), n = qty.filter(q => q > 0).length;
-  $("total").textContent = `${n} products · ${t} units`;
+  $("total").textContent = `${n} products · ${t} كيلو`;
   $("copy").disabled = $("send").disabled = t === 0;
 }
 
